@@ -524,8 +524,18 @@ App.Config = {
   TOTAL_ROOMS: 83,   // Doon Doon default; overridden per-site on load
   // Site definitions — must match DB sites table
   SITES: [
-    { id: 1, slug: 'doon-doon', name: 'Ridges Camp',       roomCount: 83, prefix: 'R' },
-    { id: 2, slug: 'wyndham',   name: 'Wyndham Camp', roomCount: 16, prefix: 'W' },
+    { id: 1, slug: 'doon-doon', name: 'Ridges Camp',        roomCount: 83, prefix: 'R' },
+    { id: 2, slug: 'wyndham',   name: 'Wyndham Camp',       roomCount: 16, prefix: 'W' },
+    { id: 3, slug: 'ddr-camp',  name: 'DDR Camp',           roomCount: 36, prefix: 'D',
+      customRooms: Array.from({length:36},(_,i)=>({num:`D${i+1}`,id:200+i+1})) },
+    { id: 4, slug: 'ddr-caravan', name: 'DDR Caravan Park', roomCount: 50, prefix: '',
+      customRooms: [
+        ...Array.from({length:12},(_,i)=>({num:`CP${i+1}`,id:300+i+1})),
+        ...Array.from({length:16},(_,i)=>({num:`P${i+1}`, id:312+i+1})),
+        ...Array.from({length:14},(_,i)=>({num:`U${i+1}`, id:328+i+1})),
+        ...Array.from({length: 8},(_,i)=>({num:`R${i+1}`, id:342+i+1})),
+      ]
+    },
   ],
   LS_SITE: 'campalloc_site_v1',  // localStorage key for active site
 };
@@ -683,15 +693,24 @@ App.Data.Store = {
 
   // Generate placeholder rooms from site config when API is unavailable
   _seedRoomsFromConfig(site) {
+    // Sites with mixed prefixes define customRooms directly (e.g. DDR Caravan Park)
+    if (site.customRooms) {
+      return site.customRooms.map(r => ({
+        id: r.id, num: r.num, clean: true, repair: false,
+        siteId: site.id, _placeholder: true,
+      }));
+    }
     const prefix = site.prefix || 'R';
-    // Offsets match migration-seeded IDs in D1:
-    //   Site 1 Doon Doon:       1–83
-    //   Site 2 Wyndham: 84–99
-    const ID_OFFSETS = { 1: 0, 2: 83 };
+    // ID offsets match D1 migration-seeded IDs:
+    //   Site 1 Ridges Camp:  1–83
+    //   Site 2 Wyndham:      84–99
+    //   Site 3 DDR Camp:     200–235
+    //   Site 4 DDR Caravan:  300–349
+    const ID_OFFSETS = { 1: 0, 2: 83, 3: 199, 4: 299 };
     const offset = (ID_OFFSETS[site.id] !== undefined) ? ID_OFFSETS[site.id] : (site.id - 1) * 100;
     return Array.from({ length: site.roomCount }, (_, i) => ({
       id:     offset + i + 1,
-      num:    `${prefix}${String(i + 1).padStart(2, '0')}`,
+      num:    `${prefix}${i + 1}`,
       clean:  true,
       repair: false,
       siteId: site.id,
