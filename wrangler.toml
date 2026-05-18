@@ -1,5 +1,5 @@
 # wrangler.toml
-name              = "round-base-c41d"
+name              = "camp-alloc-v4"
 main              = "workers/worker.js"
 compatibility_date = "2024-01-01"
 
